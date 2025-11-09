@@ -1,0 +1,264 @@
+import React, { useState } from "react";
+import {
+	View,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	Image,
+	StyleSheet,
+	ActivityIndicator,
+	Alert,
+	ScrollView,
+	KeyboardAvoidingView,
+	Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import { useAuth } from "../../context/AuthContext";
+import { postService } from "../../services/posts";
+import { useNavigation } from "@react-navigation/native";
+import Entypo from "@expo/vector-icons/Entypo";
+
+export default function CreatePostScreen() {
+	const [content, setContent] = useState("");
+	const [imageUri, setImageUri] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+	const { user } = useAuth();
+	const navigation = useNavigation();
+
+	const pickImage = async () => {
+		try {
+			// Request permission
+			const { status } =
+				await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+			if (status !== "granted") {
+				Alert.alert("Permission needed", "Please allow access to your photos");
+				return;
+			}
+
+			// Launch image picker 
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ["images"], 
+				allowsEditing: true,
+				aspect: [4, 3],
+				quality: 0.8,
+			});
+
+			if (!result.canceled && result.assets?.[0]) {
+				setImageUri(result.assets[0].uri);
+			}
+		} catch (error) {
+			console.error("Error picking image:", error);
+			Alert.alert("Error", "Failed to pick image");
+		}
+	};
+
+	const removeImage = () => {
+		setImageUri(null);
+	};
+
+	const handleCreatePost = async () => {
+		if (!content.trim() && !imageUri) {
+			Alert.alert("Error", "Please add some content or an image");
+			return;
+		}
+
+		if (!user?.id) {
+			Alert.alert("Error", "You must be logged in to create a post");
+			return;
+		}
+
+		try {
+			setLoading(true);
+
+			const post = await postService.createPost(
+				user.id,
+				content.trim(),
+				imageUri || undefined
+			);
+
+			if (post) {
+				Alert.alert("Success", "Post created successfully!");
+				setContent("");
+				setImageUri(null);
+
+				// Navigate back to feed
+				navigation.navigate("Feed" as never);
+			} else {
+				Alert.alert("Error", "Failed to create post");
+			}
+		} catch (error) {
+			console.error("Create post error:", error);
+			Alert.alert("Error", "Something went wrong");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	return (
+		<SafeAreaView style={styles.container}>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+				style={styles.keyboardView}
+			>
+				{/* Header */}
+				<View style={styles.header}>
+					<TouchableOpacity onPress={() => navigation.goBack()}>
+						<Text style={styles.cancelText}>Cancel</Text>
+					</TouchableOpacity>
+					<Text style={styles.headerTitle}>New Post</Text>
+					<TouchableOpacity
+						onPress={handleCreatePost}
+						disabled={loading || (!content.trim() && !imageUri)}
+					>
+						{loading ? (
+							<ActivityIndicator size="small" color="#3897f0" />
+						) : (
+							<Text
+								style={[
+									styles.postText,
+									!content.trim() && !imageUri && styles.postTextDisabled,
+								]}
+							>
+								Post
+							</Text>
+						)}
+					</TouchableOpacity>
+				</View>
+
+				<ScrollView style={styles.content}>
+					{/* Text Input */}
+					<TextInput
+						style={styles.input}
+						placeholder="What's on your mind?"
+						placeholderTextColor="#8e8e8e"
+						value={content}
+						onChangeText={setContent}
+						multiline
+						maxLength={500}
+						editable={!loading}
+					/>
+
+					{/* Image Preview */}
+					{imageUri && (
+						<View style={styles.imageContainer}>
+							<Image source={{ uri: imageUri }} style={styles.image} />
+							<TouchableOpacity
+								style={styles.removeImageButton}
+								onPress={removeImage}
+							>
+								<Text style={styles.removeImageText}>✕</Text>
+							</TouchableOpacity>
+						</View>
+					)}
+
+					{/* Add Image Button */}
+					{!imageUri && (
+						<TouchableOpacity
+							style={styles.addImageButton}
+							onPress={pickImage}
+							disabled={loading}
+						>
+							<Text style={styles.addImageText}>
+								<Entypo name="image" size={24} color="black" /> Add Photo
+							</Text>
+						</TouchableOpacity>
+					)}
+
+					{/* Character Count */}
+					<Text style={styles.charCount}>{content.length}/500</Text>
+				</ScrollView>
+			</KeyboardAvoidingView>
+		</SafeAreaView>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#fff",
+	},
+	keyboardView: {
+		flex: 1,
+	},
+	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingHorizontal: 15,
+		paddingVertical: 12,
+		borderBottomWidth: 1,
+		borderBottomColor: "#dbdbdb",
+	},
+	cancelText: {
+		fontSize: 16,
+		color: "#262626",
+	},
+	headerTitle: {
+		fontSize: 16,
+		fontWeight: "600",
+		color: "#262626",
+	},
+	postText: {
+		fontSize: 16,
+		fontWeight: "600",
+		color: "#3897f0",
+	},
+	postTextDisabled: {
+		color: "#b4d7f5",
+	},
+	content: {
+		flex: 1,
+		padding: 15,
+	},
+	input: {
+		fontSize: 16,
+		color: "#262626",
+		minHeight: 100,
+		textAlignVertical: "top",
+	},
+	imageContainer: {
+		marginTop: 20,
+		position: "relative",
+	},
+	image: {
+		width: "100%",
+		height: 300,
+		borderRadius: 8,
+		backgroundColor: "#f0f0f0",
+	},
+	removeImageButton: {
+		position: "absolute",
+		top: 10,
+		right: 10,
+		backgroundColor: "rgba(0,0,0,0.6)",
+		width: 30,
+		height: 30,
+		borderRadius: 15,
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	removeImageText: {
+		color: "#fff",
+		fontSize: 18,
+		fontWeight: "bold",
+	},
+	addImageButton: {
+		marginTop: 20,
+		padding: 15,
+		backgroundColor: "#f0f0f0",
+		borderRadius: 8,
+		alignItems: "center",
+	},
+	addImageText: {
+		fontSize: 16,
+		color: "#262626",
+	},
+	charCount: {
+		marginTop: 20,
+		textAlign: "right",
+		fontSize: 12,
+		color: "#8e8e8e",
+	},
+});
