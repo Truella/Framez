@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { supabase } from "../config/supabase";
 import { User, AuthContextType } from "../types";
-import { Alert } from "react-native";
+import { showToast } from "../utils/toast";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			if (error) throw error;
 
 			if (!data) {
-				Alert.alert("Error", "Profile not found. Please contact support.");
+				showToast.error("Error", "Profile not found. Please contact support.");
 				await supabase.auth.signOut();
 				return;
 			}
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setUser(data);
 		} catch (error: any) {
 			console.error("Error fetching profile:", error.message);
-			Alert.alert("Error", "Failed to load profile.");
+			showToast.error("Error", "Failed to load profile.");
 			await supabase.auth.signOut();
 		} finally {
 			setLoading(false);
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				.maybeSingle();
 
 			if (existingUsername) {
-				Alert.alert("Error", "Username is already taken");
+				showToast.error("Error", "Username is already taken");
 				return;
 			}
 
@@ -103,13 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 			if (profileError) throw profileError;
 
-			Alert.alert(
+			showToast.success(
 				"Success",
-				"Account created successfully! You can now log in."
+				"Account created successfully! A confirmation mail has been sent to your mail."
 			);
 		} catch (error: any) {
 			console.error("Signup error:", error);
-			Alert.alert("Signup Error", error.message || "Failed to create account");
+			showToast.error(
+				"Signup Error",
+				error.message || "Failed to create account"
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -126,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 			if (error) throw error;
 		} catch (error: any) {
-			Alert.alert("Login Error", error.message);
+			showToast.error("Login Error", error.message);
 		} finally {
 			setLoading(false);
 		}
@@ -137,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const { error } = await supabase.auth.signOut();
 			if (error) throw error;
 		} catch (error: any) {
-			Alert.alert("Error", error.message);
+			showToast.error("Error", error.message);
 		}
 	};
 

@@ -41,7 +41,7 @@ export default function MainNavigator() {
 				options={{
 					tabBarLabel: "Create",
 					tabBarIcon: ({ color, size }) => (
-						<MaterialIcons name="add" size={size} color={color} />
+						<AntDesign name="plus-circle" size={size} color={color} />
 					),
 				}}
 			/>

@@ -7,7 +7,6 @@ import {
 	Image,
 	StyleSheet,
 	ActivityIndicator,
-	Alert,
 	ScrollView,
 	KeyboardAvoidingView,
 	Platform,
@@ -18,6 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import { postService } from "../../services/posts";
 import { useNavigation } from "@react-navigation/native";
 import Entypo from "@expo/vector-icons/Entypo";
+import { showToast } from "../../utils/toast";
 
 export default function CreatePostScreen() {
 	const [content, setContent] = useState("");
@@ -33,7 +33,7 @@ export default function CreatePostScreen() {
 				await ImagePicker.requestMediaLibraryPermissionsAsync();
 
 			if (status !== "granted") {
-				Alert.alert("Permission needed", "Please allow access to your photos");
+				showToast.info("Permission needed", "Please allow access to your photos");
 				return;
 			}
 
@@ -50,7 +50,7 @@ export default function CreatePostScreen() {
 			}
 		} catch (error) {
 			console.error("Error picking image:", error);
-			Alert.alert("Error", "Failed to pick image");
+			showToast.error("Error", "Failed to pick image");
 		}
 	};
 
@@ -60,12 +60,12 @@ export default function CreatePostScreen() {
 
 	const handleCreatePost = async () => {
 		if (!content.trim() && !imageUri) {
-			Alert.alert("Error", "Please add some content or an image");
+			showToast.error("Error", "Please add some content or an image");
 			return;
 		}
 
 		if (!user?.id) {
-			Alert.alert("Error", "You must be logged in to create a post");
+			showToast.error("Error", "You must be logged in to create a post");
 			return;
 		}
 
@@ -79,18 +79,18 @@ export default function CreatePostScreen() {
 			);
 
 			if (post) {
-				Alert.alert("Success", "Post created successfully!");
+				showToast.success("Success", "Post created successfully!");
 				setContent("");
 				setImageUri(null);
 
 				// Navigate back to feed
 				navigation.navigate("Feed" as never);
 			} else {
-				Alert.alert("Error", "Failed to create post");
+				showToast.error("Error", "Failed to create post");
 			}
 		} catch (error) {
 			console.error("Create post error:", error);
-			Alert.alert("Error", "Something went wrong");
+			showToast.error("Error", "Something went wrong");
 		} finally {
 			setLoading(false);
 		}
