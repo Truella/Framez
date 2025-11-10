@@ -9,54 +9,59 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PostCard from "../../components/PostCard";
-import { postService } from "../../services/posts";
-import { Post } from "../../types";
 import { useFocusEffect } from "@react-navigation/native";
+import ThemeSwitcher from "../../components/ThemeSwitcher";
+import { useTheme } from "../../context/ThemeContext";
+import { usePosts } from "../../context/PostsContext";
 
 export default function FeedScreen() {
-	const [posts, setPosts] = useState<Post[]>([]);
-	const [loading, setLoading] = useState(true);
+	const { allPosts, loadAllPosts, updatePostLike } = usePosts();
 	const [refreshing, setRefreshing] = useState(false);
+	const [initialLoading, setInitialLoading] = useState(true);
 
-	const loadPosts = async () => {
+	const { colors } = useTheme();
+
+	const loadPosts = async (showSpinner = false) => {
 		try {
-			const fetchedPosts = await postService.fetchPosts();
-			setPosts(fetchedPosts);
+			if (showSpinner) setInitialLoading(true);
+			await loadAllPosts();
 		} catch (error) {
 			console.error("Error loading posts:", error);
 		} finally {
-			setLoading(false);
 			setRefreshing(false);
+			setInitialLoading(false);
 		}
 	};
 
-	// Load posts when screen comes into focus
 	useFocusEffect(
 		useCallback(() => {
-			loadPosts();
+			const shouldShowSpinner = allPosts.length === 0;
+			loadPosts(shouldShowSpinner);
 		}, [])
 	);
-
-	const onRefresh = () => {
+	const onRefresh = async () => {
 		setRefreshing(true);
-		loadPosts();
+		await loadAllPosts();
 	};
-
-	if (loading) {
+	const handleLikeUpdate = (postId: string, liked: boolean, count: number) => {
+		updatePostLike(postId, liked, count);
+	};
+	if (initialLoading) {
 		return (
 			<View style={styles.centerContainer}>
 				<ActivityIndicator size="large" color="#3897f0" />
 			</View>
 		);
 	}
-
 	return (
-		<SafeAreaView style={styles.container}>
-			<View style={styles.header}>
+		<SafeAreaView
+			style={[styles.container, { backgroundColor: colors.background }]}
+		>
+			<View style={[styles.header, {borderColor:colors.border}]}>
 				<Text style={styles.headerTitle}>Framez</Text>
+				<ThemeSwitcher />
 			</View>
-
-			{posts.length === 0 ? (
+			{allPosts.length === 0 ? (
 				<View style={styles.centerContainer}>
 					<Text style={styles.emptyText}>No posts yet</Text>
 					<Text style={styles.emptySubtext}>
@@ -65,9 +70,11 @@ export default function FeedScreen() {
 				</View>
 			) : (
 				<FlatList
-					data={posts}
+					data={allPosts}
 					keyExtractor={(item) => item.id}
-					renderItem={({ item }) => <PostCard post={item} />}
+					renderItem={({ item }) => (
+						<PostCard post={item} onLikeUpdate={handleLikeUpdate} />
+					)}
 					refreshControl={
 						<RefreshControl
 							refreshing={refreshing}
@@ -85,12 +92,14 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
 	},
 	header: {
 		borderBottomWidth: 1,
-		borderBottomColor: "#dbdbdb",
-		padding: 15,
+		paddingVertical: 15,
+		paddingHorizontal: 24,
+		display: "flex",
+		flexDirection: "row",
+		justifyContent: "space-between",
 	},
 	headerTitle: {
 		fontSize: 24,

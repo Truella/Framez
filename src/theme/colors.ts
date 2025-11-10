@@ -1,12 +1,7 @@
 export const colors = {
-	// Primary gradient (purple to pink - different from Instagram's orange)
 	gradientStart: "#667eea", // Purple
 	gradientEnd: "#764ba2", // Deep purple
 
-	// Alternative gradients you can use
-	// Blue gradient: start: '#4facfe', end: '#00f2fe'
-	// Pink gradient: start: '#f857a6', end: '#ff5858'
-	// Green gradient: start: '#56ab2f', end: '#a8e063'
 
 	primary: "#667eea",
 	secondary: "#764ba2",

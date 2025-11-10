@@ -11,32 +11,48 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 import { postService } from "../../services/posts";
-import { Post } from "../../types";
 import PostCard from "../../components/PostCard";
 import { useFocusEffect } from "@react-navigation/native";
+import { usePosts } from "../../context/PostsContext";
+
+type TabType = "posts" | "saved";
 
 export default function ProfileScreen() {
 	const { user, signOut } = useAuth();
-	const [posts, setPosts] = useState<Post[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [activeTab, setActiveTab] = useState<TabType>("posts");
+	const [initialLoading, setInitialLoading] = useState(true);
+	
+	const {
+		userPosts,
+		savedPosts,
+		loadUserPosts,
+		loadSavedPosts,
+		updatePostLike,
+		updatePostSave,
+		removePost,
+	} = usePosts();
 
-	const loadUserPosts = async () => {
+	const loadData = async (showSpinner = false) => {
 		if (!user?.id) return;
 
 		try {
-			setLoading(true);
-			const userPosts = await postService.fetchUserPosts(user.id);
-			setPosts(userPosts);
+			if (showSpinner) setInitialLoading(true);
+			await Promise.all([loadUserPosts(user.id), loadSavedPosts(user.id)]);
 		} catch (error) {
-			console.error("Error loading user posts:", error);
+			console.error("Error loading profile data:", error);
 		} finally {
-			setLoading(false);
+			setInitialLoading(false);
 		}
 	};
 
 	useFocusEffect(
 		useCallback(() => {
-			loadUserPosts();
+			if (user?.id) {
+				// Always reload, but only show spinner if no data
+				const shouldShowSpinner =
+					userPosts.length === 0 && savedPosts.length === 0;
+				loadData(shouldShowSpinner);
+			}
 		}, [user?.id])
 	);
 
@@ -47,11 +63,11 @@ export default function ProfileScreen() {
 				text: "Delete",
 				style: "destructive",
 				onPress: async () => {
-					const post = posts.find((p) => p.id === postId);
+					const post = userPosts.find((p) => p.id === postId);
 					const success = await postService.deletePost(postId, post?.image_url);
 
 					if (success) {
-						setPosts(posts.filter((p) => p.id !== postId));
+						removePost(postId); // CHANGE TO THIS
 						Alert.alert("Success", "Post deleted");
 					} else {
 						Alert.alert("Error", "Failed to delete post");
@@ -61,6 +77,26 @@ export default function ProfileScreen() {
 		]);
 	};
 
+	const handleLikeUpdate = (postId: string, liked: boolean, count: number) => {
+		updatePostLike(postId, liked, count);
+	};
+
+	const handleSaveUpdate = (postId: string, saved: boolean) => {
+		updatePostSave(postId, saved);
+	};
+
+	if (initialLoading) {
+		return (
+			<SafeAreaView style={styles.container}>
+				<View style={styles.header}>
+					<Text style={styles.title}>Profile</Text>
+				</View>
+				<View style={styles.centerContainer}>
+					<ActivityIndicator size="large" color="#3897f0" />
+				</View>
+			</SafeAreaView>
+		);
+	}
 	const renderHeader = () => (
 		<View>
 			<View style={styles.profileInfo}>
@@ -76,8 +112,12 @@ export default function ProfileScreen() {
 
 			<View style={styles.stats}>
 				<View style={styles.statItem}>
-					<Text style={styles.statNumber}>{posts.length}</Text>
+					<Text style={styles.statNumber}>{userPosts.length}</Text>
 					<Text style={styles.statLabel}>Posts</Text>
+				</View>
+				<View style={styles.statItem}>
+					<Text style={styles.statNumber}>{savedPosts.length}</Text>
+					<Text style={styles.statLabel}>Saved</Text>
 				</View>
 			</View>
 
@@ -85,42 +125,72 @@ export default function ProfileScreen() {
 				<Text style={styles.logoutButtonText}>Log Out</Text>
 			</TouchableOpacity>
 
-			<View style={styles.postsHeader}>
-				<Text style={styles.postsHeaderText}>Your Posts</Text>
+			{/* Tabs */}
+			<View style={styles.tabs}>
+				<TouchableOpacity
+					style={[styles.tab, activeTab === "posts" && styles.activeTab]}
+					onPress={() => setActiveTab("posts")}
+				>
+					<Text
+						style={[
+							styles.tabText,
+							activeTab === "posts" && styles.activeTabText,
+						]}
+					>
+						Your Posts
+					</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					style={[styles.tab, activeTab === "saved" && styles.activeTab]}
+					onPress={() => setActiveTab("saved")}
+				>
+					<Text
+						style={[
+							styles.tabText,
+							activeTab === "saved" && styles.activeTabText,
+						]}
+					>
+						Saved
+					</Text>
+				</TouchableOpacity>
 			</View>
 		</View>
 	);
+
+	const currentPosts = activeTab === "posts" ? userPosts : savedPosts;
 
 	return (
 		<SafeAreaView style={styles.container}>
 			<View style={styles.header}>
 				<Text style={styles.title}>Profile</Text>
 			</View>
-
-			{loading ? (
-				<View style={styles.centerContainer}>
-					<ActivityIndicator size="large" color="#3897f0" />
-				</View>
-			) : (
-				<FlatList
-					data={posts}
-					keyExtractor={(item) => item.id}
-					renderItem={({ item }) => (
-						<PostCard
-							post={item}
-							showDeleteButton
-							onDelete={handleDeletePost}
-						/>
-					)}
-					ListHeaderComponent={renderHeader}
-					ListEmptyComponent={
-						<View style={styles.emptyContainer}>
-							<Text style={styles.emptyText}>No posts yet</Text>
-						</View>
-					}
-					showsVerticalScrollIndicator={false}
-				/>
-			)}
+			<FlatList
+				data={currentPosts}
+				keyExtractor={(item) => item.id}
+				renderItem={({ item }) => (
+					<PostCard
+						post={item}
+						showDeleteButton={activeTab === "posts"}
+						onDelete={handleDeletePost}
+						onLikeUpdate={handleLikeUpdate}
+						onSaveUpdate={handleSaveUpdate}
+					/>
+				)}
+				ListHeaderComponent={renderHeader}
+				ListEmptyComponent={
+					<View style={styles.emptyContainer}>
+						<Text style={styles.emptyText}>
+							{activeTab === "posts" ? "No posts yet" : "No saved posts yet"}
+						</Text>
+						<Text style={styles.emptySubtext}>
+							{activeTab === "posts"
+								? "Create your first post to get started!"
+								: "Save posts to see them here"}
+						</Text>
+					</View>
+				}
+				showsVerticalScrollIndicator={false}
+			/>
 		</SafeAreaView>
 	);
 }
@@ -219,23 +289,43 @@ const styles = StyleSheet.create({
 		fontWeight: "600",
 		color: "#262626",
 	},
-	postsHeader: {
-		padding: 15,
+	tabs: {
+		flexDirection: "row",
+		marginTop: 10,
 		borderBottomWidth: 1,
 		borderBottomColor: "#dbdbdb",
-		marginTop: 10,
 	},
-	postsHeaderText: {
-		fontSize: 16,
+	tab: {
+		flex: 1,
+		paddingVertical: 15,
+		alignItems: "center",
+		borderBottomWidth: 2,
+		borderBottomColor: "transparent",
+	},
+	activeTab: {
+		borderBottomColor: "#3897f0",
+	},
+	tabText: {
+		fontSize: 14,
 		fontWeight: "600",
-		color: "#262626",
+		color: "#8e8e8e",
+	},
+	activeTabText: {
+		color: "#3897f0",
 	},
 	emptyContainer: {
 		padding: 40,
 		alignItems: "center",
 	},
 	emptyText: {
+		fontSize: 16,
+		fontWeight: "600",
+		color: "#262626",
+		marginBottom: 8,
+	},
+	emptySubtext: {
 		fontSize: 14,
 		color: "#8e8e8e",
+		textAlign: "center",
 	},
 });

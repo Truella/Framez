@@ -1,12 +1,12 @@
 export interface User {
 	id: string;
 	email: string;
-    username: string;
+	username: string;
 	full_name?: string;
-    bio?: string;
+	bio?: string;
 	avatar_url?: string;
 	created_at: string;
-    updated_at: string;
+	updated_at: string;
 }
 
 export interface Post {
@@ -15,13 +15,26 @@ export interface Post {
 	content: string;
 	image_url?: string;
 	created_at: string;
-	profiles?: User; // For joined queries
+	profiles?: User;
+	likes?: Like[];
+	like_count?: number;
+	is_liked?: boolean;
 }
-
+export interface Like {
+	id: string;
+	user_id: string;
+	post_id: string;
+	created_at: string;
+}
 export interface AuthContextType {
 	user: User | null;
 	loading: boolean;
-	signUp: (email: string, password: string, username:string, fullName: string) => Promise<void>;
+	signUp: (
+		email: string,
+		password: string,
+		username: string,
+		fullName: string
+	) => Promise<void>;
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
 }
