@@ -14,6 +14,8 @@ import { postService } from "../../services/posts";
 import PostCard from "../../components/PostCard";
 import { useFocusEffect } from "@react-navigation/native";
 import { usePosts } from "../../context/PostsContext";
+import { useTheme } from "../../context/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 type TabType = "posts" | "saved";
 
@@ -21,7 +23,7 @@ export default function ProfileScreen() {
 	const { user, signOut } = useAuth();
 	const [activeTab, setActiveTab] = useState<TabType>("posts");
 	const [initialLoading, setInitialLoading] = useState(true);
-	
+	const { colors } = useTheme();
 	const {
 		userPosts,
 		savedPosts,
@@ -87,9 +89,11 @@ export default function ProfileScreen() {
 
 	if (initialLoading) {
 		return (
-			<SafeAreaView style={styles.container}>
-				<View style={styles.header}>
-					<Text style={styles.title}>Profile</Text>
+			<SafeAreaView
+				style={[styles.container, { backgroundColor: colors.background }]}
+			>
+				<View style={[styles.header, {borderColor: colors.border}]}>
+					<Text style={[styles.title, {color:colors.textPrimary}]}>{user?.username}</Text>
 				</View>
 				<View style={styles.centerContainer}>
 					<ActivityIndicator size="large" color="#3897f0" />
@@ -100,11 +104,17 @@ export default function ProfileScreen() {
 	const renderHeader = () => (
 		<View>
 			<View style={styles.profileInfo}>
-				<View style={styles.avatar}>
-					<Text style={styles.avatarText}>
-						{user?.username?.charAt(0).toUpperCase() || "U"}
-					</Text>
-				</View>
+					<LinearGradient
+						colors={[colors.gradientStart, colors.gradientEnd]}
+						start={{ x: 0, y: 0 }}
+						end={{ x: 1, y: 1 }}
+						style={styles.avatar}
+					>
+						<Text style={styles.avatarText}>
+							{user?.username?.charAt(0).toUpperCase() || "U"}
+						</Text>
+					</LinearGradient>
+	
 				<Text style={styles.username}>@{user?.username}</Text>
 				<Text style={styles.name}>{user?.full_name || "User"}</Text>
 				{user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
@@ -121,12 +131,9 @@ export default function ProfileScreen() {
 				</View>
 			</View>
 
-			<TouchableOpacity style={styles.logoutButton} onPress={signOut}>
-				<Text style={styles.logoutButtonText}>Log Out</Text>
-			</TouchableOpacity>
-
+			
 			{/* Tabs */}
-			<View style={styles.tabs}>
+			<View style={[styles.tabs]}>
 				<TouchableOpacity
 					style={[styles.tab, activeTab === "posts" && styles.activeTab]}
 					onPress={() => setActiveTab("posts")}
@@ -160,9 +167,16 @@ export default function ProfileScreen() {
 	const currentPosts = activeTab === "posts" ? userPosts : savedPosts;
 
 	return (
-		<SafeAreaView style={styles.container}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Profile</Text>
+		<SafeAreaView
+			style={[styles.container, { backgroundColor: colors.background }]}
+		>
+			<View style={[styles.header, { borderColor: colors.border }]}>
+				<Text style={[styles.title, { color: colors.textPrimary }]}>
+					{user?.username}
+				</Text>
+				<TouchableOpacity style={styles.logoutButton} onPress={signOut}>
+					<Text style={styles.logoutButtonText}>Log Out</Text>
+				</TouchableOpacity>
 			</View>
 			<FlatList
 				data={currentPosts}
@@ -198,11 +212,9 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
 	},
 	header: {
 		borderBottomWidth: 1,
-		borderBottomColor: "#dbdbdb",
 		padding: 15,
 	},
 	title: {
@@ -292,8 +304,6 @@ const styles = StyleSheet.create({
 	tabs: {
 		flexDirection: "row",
 		marginTop: 10,
-		borderBottomWidth: 1,
-		borderBottomColor: "#dbdbdb",
 	},
 	tab: {
 		flex: 1,

@@ -12,6 +12,10 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { AuthStackParamList } from "../../types/navigation";
+import { showToast } from "../../utils/toast";
+import { useTheme } from "../../context/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
+import Logo from "../../components/Logo";
 
 type LoginScreenNavigationProp = StackNavigationProp<
 	AuthStackParamList,
@@ -26,10 +30,10 @@ export default function LoginScreen({ navigation }: Props) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const { signIn, loading } = useAuth();
-
+	const { colors } = useTheme();
 	const handleLogin = async () => {
 		if (!email || !password) {
-			alert("Please fill in all fields");
+			showToast.info("Please fill in all fields");
 			return;
 		}
 		await signIn(email, password);
@@ -38,44 +42,59 @@ export default function LoginScreen({ navigation }: Props) {
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
-			style={styles.container}
+			style={[styles.container, { backgroundColor: colors.background }]}
 		>
 			<View style={styles.content}>
-				<Text style={styles.title}>Framez</Text>
-				<Text style={styles.subtitle}>Share your moments</Text>
-
+				<Logo/>
+				<Text style={[styles.subtitle, {color:colors.textSecondary}]}>Share your moments</Text>
 				<TextInput
-					style={styles.input}
+					style={[
+						styles.input,
+						{
+							backgroundColor: colors.surface,
+							borderColor: colors.border,
+							color: colors.textPrimary,
+						},
+					]}
 					placeholder="Email"
+					placeholderTextColor={colors.textTertiary}
 					value={email}
 					onChangeText={setEmail}
 					autoCapitalize="none"
 					keyboardType="email-address"
 				/>
-
 				<TextInput
-					style={styles.input}
+					style={[
+						styles.input,
+						{
+							backgroundColor: colors.surface,
+							borderColor: colors.border,
+							color: colors.textPrimary,
+						},
+					]}
 					placeholder="Password"
+					placeholderTextColor={colors.textTertiary}
 					value={password}
 					onChangeText={setPassword}
 					secureTextEntry
 				/>
-
-				<TouchableOpacity
-					style={styles.button}
-					onPress={handleLogin}
-					disabled={loading}
-				>
-					{loading ? (
-						<ActivityIndicator color="#fff" />
-					) : (
-						<Text style={styles.buttonText}>Log In</Text>
-					)}
+				<TouchableOpacity onPress={handleLogin} disabled={loading}>
+					<LinearGradient
+						colors={[colors.gradientStart, colors.gradientEnd]}
+						start={{ x: 0, y: 0 }}
+						end={{ x: 1, y: 1 }}
+						style={styles.button}
+					>
+						{loading ? (
+							<ActivityIndicator color="#fff" />
+						) : (
+							<Text style={styles.buttonText}>Log In</Text>
+						)}
+					</LinearGradient>
 				</TouchableOpacity>
-
 				<TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-					<Text style={styles.linkText}>
-						Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
+					<Text style={[styles.linkText, {color:colors.textSecondary}]}>
+						Don't have an account? <Text style={[styles.linkBold, {color:colors.primary}]}>Sign Up</Text>
 					</Text>
 				</TouchableOpacity>
 			</View>
@@ -86,54 +105,40 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
 	},
 	content: {
 		flex: 1,
 		justifyContent: "center",
 		padding: 20,
 	},
-	title: {
-		fontSize: 48,
-		fontWeight: "bold",
-		textAlign: "center",
-		marginBottom: 10,
-		color: "#262626",
-	},
 	subtitle: {
 		fontSize: 16,
 		textAlign: "center",
 		marginBottom: 40,
-		color: "#8e8e8e",
 	},
 	input: {
-		backgroundColor: "#fafafa",
 		borderWidth: 1,
-		borderColor: "#dbdbdb",
 		borderRadius: 5,
 		padding: 15,
 		marginBottom: 10,
 		fontSize: 14,
 	},
 	button: {
-		backgroundColor: "#3897f0",
 		padding: 15,
 		borderRadius: 5,
 		alignItems: "center",
 		marginTop: 10,
 	},
 	buttonText: {
-		color: "#fff",
 		fontSize: 16,
 		fontWeight: "600",
+		color:"#fff"
 	},
 	linkText: {
 		textAlign: "center",
 		marginTop: 20,
-		color: "#8e8e8e",
 	},
 	linkBold: {
-		color: "#3897f0",
 		fontWeight: "600",
 	},
 });

@@ -13,6 +13,10 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { AuthStackParamList } from "../../types/navigation";
+import { useTheme } from "../../context/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
+import Logo from "../../components/Logo";
+import { showToast } from "../../utils/toast";
 
 type SignUpScreenNavigationProp = StackNavigationProp<
 	AuthStackParamList,
@@ -30,30 +34,30 @@ export default function SignUpScreen({ navigation }: Props) {
 	const [fullName, setFullName] = useState("");
 	const [username, setUsername] = useState("");
 	const { signUp, loading } = useAuth();
-
+	const { colors } = useTheme();
 	const handleSignUp = async () => {
 		//Form Validation
 		if (!email || !password || !fullName || !username) {
-			alert("Please fill in all fields");
+			showToast.info("Please fill in all fields");
 			return;
 		}
 
 		if (username.length < 3) {
-			alert("Username must be at least 3 characters");
+			showToast.info("Username must be at least 3 characters");
 			return;
 		}
 
 		if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-			alert("Username can only contain letters, numbers, and underscores");
+			showToast.info("Username can only contain letters, numbers, and underscores");
 			return;
 		}
 		if (password !== confirmPassword) {
-			alert("Passwords do not match");
+			showToast.info("Passwords do not match");
 			return;
 		}
 
 		if (password.length < 8) {
-			alert("Password must be at least 8 characters");
+			showToast.info("Password must be at least 8 characters");
 			return;
 		}
 
@@ -63,30 +67,54 @@ export default function SignUpScreen({ navigation }: Props) {
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
-			style={styles.container}
+			style={[styles.container, { backgroundColor: colors.background }]}
 		>
 			<ScrollView contentContainerStyle={styles.scrollContent}>
 				<View style={styles.content}>
-					<Text style={styles.title}>Framez</Text>
-					<Text style={styles.subtitle}>Create your account</Text>
+					<Logo/>
+					<Text style={[styles.subtitle, {color:colors.textSecondary}]}>Create your account</Text>
 
 					<TextInput
-						style={styles.input}
+						style={[
+							styles.input,
+							{
+								backgroundColor: colors.surface,
+								borderColor: colors.border,
+								color: colors.textPrimary,
+							},
+						]}
 						placeholder="Full Name"
+						placeholderTextColor={colors.textTertiary}
 						value={fullName}
 						onChangeText={setFullName}
 					/>
 					<TextInput
-						style={styles.input}
+						style={[
+							styles.input,
+							{
+								backgroundColor: colors.surface,
+								borderColor: colors.border,
+								color: colors.textPrimary,
+							},
+						]}
 						placeholder="Username"
+						placeholderTextColor={colors.textTertiary}
 						value={username}
 						onChangeText={(text) => setUsername(text.toLowerCase())}
-                        autoCapitalize="none"
+						autoCapitalize="none"
 					/>
 
 					<TextInput
-						style={styles.input}
+						style={[
+							styles.input,
+							{
+								backgroundColor: colors.surface,
+								borderColor: colors.border,
+								color: colors.textPrimary,
+							},
+						]}
 						placeholder="Email"
+						placeholderTextColor={colors.textTertiary}
 						value={email}
 						onChangeText={setEmail}
 						autoCapitalize="none"
@@ -94,37 +122,57 @@ export default function SignUpScreen({ navigation }: Props) {
 					/>
 
 					<TextInput
-						style={styles.input}
+						style={[
+							styles.input,
+							{
+								backgroundColor: colors.surface,
+								borderColor: colors.border,
+								color: colors.textPrimary,
+							},
+						]}
 						placeholder="Password"
+						placeholderTextColor={colors.textTertiary}
 						value={password}
 						onChangeText={setPassword}
 						secureTextEntry
 					/>
 
 					<TextInput
-						style={styles.input}
+						style={[
+							styles.input,
+							{
+								backgroundColor: colors.surface,
+								borderColor: colors.border,
+								color: colors.textPrimary,
+							},
+						]}
 						placeholder="Confirm Password"
+						placeholderTextColor={colors.textTertiary}
 						value={confirmPassword}
 						onChangeText={setConfirmPassword}
 						secureTextEntry
 					/>
 
-					<TouchableOpacity
-						style={styles.button}
-						onPress={handleSignUp}
-						disabled={loading}
-					>
-						{loading ? (
-							<ActivityIndicator color="#fff" />
-						) : (
-							<Text style={styles.buttonText}>Sign Up</Text>
-						)}
+					<TouchableOpacity onPress={handleSignUp} disabled={loading}>
+						<LinearGradient
+							colors={[colors.gradientStart, colors.gradientEnd]}
+							start={{ x: 0, y: 0 }}
+							end={{ x: 1, y: 1 }}
+							style={styles.button}
+						>
+							{loading ? (
+								<ActivityIndicator color="#fff" />
+							) : (
+								<Text style={styles.buttonText}>Sign Up</Text>
+							)}
+						</LinearGradient>
 					</TouchableOpacity>
-
 					<TouchableOpacity onPress={() => navigation.navigate("Login")}>
-						<Text style={styles.linkText}>
-							Already have an account?{" "}
-							<Text style={styles.linkBold}>Log In</Text>
+						<Text style={[styles.linkText, {color:colors.textSecondary}]}>
+							Already have an account? 
+							<Text style={[styles.linkBold, { color: colors.primary }]}>
+								 Log In
+							</Text>
 						</Text>
 					</TouchableOpacity>
 				</View>
@@ -136,7 +184,6 @@ export default function SignUpScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
 	},
 	scrollContent: {
 		flexGrow: 1,
@@ -146,30 +193,19 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		padding: 20,
 	},
-	title: {
-		fontSize: 48,
-		fontWeight: "bold",
-		textAlign: "center",
-		marginBottom: 10,
-		color: "#262626",
-	},
 	subtitle: {
 		fontSize: 16,
 		textAlign: "center",
 		marginBottom: 40,
-		color: "#8e8e8e",
 	},
 	input: {
-		backgroundColor: "#fafafa",
 		borderWidth: 1,
-		borderColor: "#dbdbdb",
 		borderRadius: 5,
 		padding: 15,
 		marginBottom: 10,
 		fontSize: 14,
 	},
 	button: {
-		backgroundColor: "#3897f0",
 		padding: 15,
 		borderRadius: 5,
 		alignItems: "center",
@@ -183,10 +219,8 @@ const styles = StyleSheet.create({
 	linkText: {
 		textAlign: "center",
 		marginTop: 20,
-		color: "#8e8e8e",
 	},
 	linkBold: {
-		color: "#3897f0",
 		fontWeight: "600",
 	},
 });

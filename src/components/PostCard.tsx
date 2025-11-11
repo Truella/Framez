@@ -18,7 +18,7 @@ interface PostCardProps {
 	onSaveUpdate?: (postId: string, saved: boolean) => void; // ADD THIS
 }
 
-export default function PostCard({
+ function PostCard({
 	post,
 	onDelete,
 	showDeleteButton = false,
@@ -177,7 +177,7 @@ export default function PostCard({
 					<MaterialCommunityIcons
 						name={isSaved ? "bookmark" : "bookmark-outline"}
 						size={26}
-						color={isSaved ? "#667eea" : "#262626"}
+						color={isSaved ? "#667eea" : colors.share}
 					/>
 				</TouchableOpacity>
 			</View>
@@ -331,3 +331,6 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 	},
 });
+
+
+export default React.memo(PostCard)
