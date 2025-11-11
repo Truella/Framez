@@ -13,9 +13,10 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		alignItems: "center",
 		height: 50,
+		overflow:"hidden"
 	},
 	logo: {
-		width: 150,
-		height: 150,
+		width: 100,
+		height: 50, 
 	},
 });

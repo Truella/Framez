@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import ThemeSwitcher from "../../components/ThemeSwitcher";
 import { useTheme } from "../../context/ThemeContext";
 import { usePosts } from "../../context/PostsContext";
+import Logo from "../../components/Logo";
 
 export default function FeedScreen() {
 	const { allPosts, loadAllPosts, updatePostLike } = usePosts();
@@ -58,7 +59,7 @@ export default function FeedScreen() {
 			style={[styles.container, { backgroundColor: colors.background }]}
 		>
 			<View style={[styles.header, {borderColor:colors.border}]}>
-				<Text style={styles.headerTitle}>Framez</Text>
+				<Logo/>
 				<ThemeSwitcher />
 			</View>
 			{allPosts.length === 0 ? (
@@ -95,11 +96,13 @@ const styles = StyleSheet.create({
 	},
 	header: {
 		borderBottomWidth: 1,
-		paddingVertical: 15,
-		paddingHorizontal: 24,
+		paddingVertical: 10,
+		paddingStart: 4,
+		paddingEnd:24,
 		display: "flex",
 		flexDirection: "row",
 		justifyContent: "space-between",
+		alignItems:"center"
 	},
 	headerTitle: {
 		fontSize: 24,

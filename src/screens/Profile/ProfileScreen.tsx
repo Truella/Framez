@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { usePosts } from "../../context/PostsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 type TabType = "posts" | "saved";
 
@@ -69,7 +70,7 @@ export default function ProfileScreen() {
 					const success = await postService.deletePost(postId, post?.image_url);
 
 					if (success) {
-						removePost(postId); // CHANGE TO THIS
+						removePost(postId);
 						Alert.alert("Success", "Post deleted");
 					} else {
 						Alert.alert("Error", "Failed to delete post");
@@ -92,8 +93,10 @@ export default function ProfileScreen() {
 			<SafeAreaView
 				style={[styles.container, { backgroundColor: colors.background }]}
 			>
-				<View style={[styles.header, {borderColor: colors.border}]}>
-					<Text style={[styles.title, {color:colors.textPrimary}]}>{user?.username}</Text>
+				<View style={[styles.header, { borderColor: colors.border }]}>
+					<Text style={[styles.title, { color: colors.textPrimary }]}>
+						{user?.username}
+					</Text>
 				</View>
 				<View style={styles.centerContainer}>
 					<ActivityIndicator size="large" color="#3897f0" />
@@ -104,34 +107,49 @@ export default function ProfileScreen() {
 	const renderHeader = () => (
 		<View>
 			<View style={styles.profileInfo}>
-					<LinearGradient
-						colors={[colors.gradientStart, colors.gradientEnd]}
-						start={{ x: 0, y: 0 }}
-						end={{ x: 1, y: 1 }}
-						style={styles.avatar}
-					>
-						<Text style={styles.avatarText}>
-							{user?.username?.charAt(0).toUpperCase() || "U"}
-						</Text>
-					</LinearGradient>
-	
-				<Text style={styles.username}>@{user?.username}</Text>
-				<Text style={styles.name}>{user?.full_name || "User"}</Text>
-				{user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
+				<LinearGradient
+					colors={[colors.gradientStart, colors.gradientEnd]}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 1 }}
+					style={styles.avatar}
+				>
+					<Text style={styles.avatarText}>
+						{user?.username?.charAt(0).toUpperCase() || "U"}
+					</Text>
+				</LinearGradient>
+
+				<Text style={[styles.username, { color: colors.textPrimary }]}>
+					@{user?.username}
+				</Text>
+				<Text style={[styles.name, { color: colors.textSecondary }]}>
+					{user?.full_name || "User"}
+				</Text>
+				{user?.bio && (
+					<Text style={[styles.bio, { color: colors.textPrimary }]}>
+						{user?.bio}
+					</Text>
+				)}
 			</View>
 
-			<View style={styles.stats}>
+			<View style={[styles.stats, { borderColor: colors.border }]}>
 				<View style={styles.statItem}>
-					<Text style={styles.statNumber}>{userPosts.length}</Text>
-					<Text style={styles.statLabel}>Posts</Text>
+					<Text style={[styles.statNumber, { color: colors.textPrimary }]}>
+						{userPosts.length}
+					</Text>
+					<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+						Posts
+					</Text>
 				</View>
 				<View style={styles.statItem}>
-					<Text style={styles.statNumber}>{savedPosts.length}</Text>
-					<Text style={styles.statLabel}>Saved</Text>
+					<Text style={[styles.statNumber, { color: colors.textPrimary }]}>
+						{savedPosts.length}
+					</Text>
+					<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+						Saved
+					</Text>
 				</View>
 			</View>
 
-			
 			{/* Tabs */}
 			<View style={[styles.tabs]}>
 				<TouchableOpacity
@@ -171,11 +189,15 @@ export default function ProfileScreen() {
 			style={[styles.container, { backgroundColor: colors.background }]}
 		>
 			<View style={[styles.header, { borderColor: colors.border }]}>
-				<Text style={[styles.title, { color: colors.textPrimary }]}>
+				<Text style={[styles.title, { color: colors.primary }]}>
 					{user?.username}
 				</Text>
-				<TouchableOpacity style={styles.logoutButton} onPress={signOut}>
-					<Text style={styles.logoutButtonText}>Log Out</Text>
+				<TouchableOpacity
+					onPress={signOut}
+					style={styles.logoutButtonContainer}
+				>
+					<Text style={{ color: colors.primary }}>Logout</Text>
+					<MaterialIcons name="logout" size={24} color={colors.primary} />
 				</TouchableOpacity>
 			</View>
 			<FlatList
@@ -216,11 +238,14 @@ const styles = StyleSheet.create({
 	header: {
 		borderBottomWidth: 1,
 		padding: 15,
+		paddingEnd: 24,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 	},
 	title: {
 		fontSize: 20,
-		fontWeight: "bold",
-		color: "#262626",
+		fontStyle: "italic",
 	},
 	centerContainer: {
 		flex: 1,
@@ -269,9 +294,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingVertical: 15,
 		borderTopWidth: 1,
-		borderTopColor: "#dbdbdb",
 		borderBottomWidth: 1,
-		borderBottomColor: "#dbdbdb",
 	},
 	statItem: {
 		alignItems: "center",
@@ -287,19 +310,10 @@ const styles = StyleSheet.create({
 		color: "#8e8e8e",
 		marginTop: 4,
 	},
-	logoutButton: {
-		marginHorizontal: 20,
-		marginTop: 20,
-		paddingVertical: 10,
-		borderWidth: 1,
-		borderColor: "#dbdbdb",
-		borderRadius: 5,
+	logoutButtonContainer: {
+		flexDirection: "row",
+		gap: 4,
 		alignItems: "center",
-	},
-	logoutButtonText: {
-		fontSize: 14,
-		fontWeight: "600",
-		color: "#262626",
 	},
 	tabs: {
 		flexDirection: "row",

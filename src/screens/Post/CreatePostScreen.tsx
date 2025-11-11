@@ -18,6 +18,8 @@ import { postService } from "../../services/posts";
 import { useNavigation } from "@react-navigation/native";
 import Entypo from "@expo/vector-icons/Entypo";
 import { showToast } from "../../utils/toast";
+import { useTheme } from "../../context/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function CreatePostScreen() {
 	const [content, setContent] = useState("");
@@ -25,7 +27,7 @@ export default function CreatePostScreen() {
 	const [loading, setLoading] = useState(false);
 	const { user } = useAuth();
 	const navigation = useNavigation();
-
+	const { colors } = useTheme();
 	const pickImage = async () => {
 		try {
 			// Request permission
@@ -33,13 +35,16 @@ export default function CreatePostScreen() {
 				await ImagePicker.requestMediaLibraryPermissionsAsync();
 
 			if (status !== "granted") {
-				showToast.info("Permission needed", "Please allow access to your photos");
+				showToast.info(
+					"Permission needed",
+					"Please allow access to your photos"
+				);
 				return;
 			}
 
-			// Launch image picker 
+			// Launch image picker
 			const result = await ImagePicker.launchImageLibraryAsync({
-				mediaTypes: ["images"], 
+				mediaTypes: ["images"],
 				allowsEditing: true,
 				aspect: [4, 3],
 				quality: 0.8,
@@ -97,17 +102,23 @@ export default function CreatePostScreen() {
 	};
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView
+			style={[styles.container, { backgroundColor: colors.background }]}
+		>
 			<KeyboardAvoidingView
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
 				style={styles.keyboardView}
 			>
 				{/* Header */}
-				<View style={styles.header}>
+				<View style={[styles.header,{borderColor:colors.border}]}>
 					<TouchableOpacity onPress={() => navigation.goBack()}>
-						<Text style={styles.cancelText}>Cancel</Text>
+						<Text style={[styles.cancelText, { color: colors.textSecondary }]}>
+							Cancel
+						</Text>
 					</TouchableOpacity>
-					<Text style={styles.headerTitle}>New Post</Text>
+					<Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+						New Post
+					</Text>
 					<TouchableOpacity
 						onPress={handleCreatePost}
 						disabled={loading || (!content.trim() && !imageUri)}
@@ -130,9 +141,9 @@ export default function CreatePostScreen() {
 				<ScrollView style={styles.content}>
 					{/* Text Input */}
 					<TextInput
-						style={styles.input}
+						style={[styles.input, { color: colors.textSecondary }]}
 						placeholder="What's on your mind?"
-						placeholderTextColor="#8e8e8e"
+						placeholderTextColor={colors.textTertiary}
 						value={content}
 						onChangeText={setContent}
 						multiline
@@ -155,14 +166,20 @@ export default function CreatePostScreen() {
 
 					{/* Add Image Button */}
 					{!imageUri && (
-						<TouchableOpacity
-							style={styles.addImageButton}
-							onPress={pickImage}
-							disabled={loading}
-						>
-							<Text style={styles.addImageText}>
-								<Entypo name="image" size={24} color="black" /> Add Photo
-							</Text>
+						<TouchableOpacity onPress={pickImage} disabled={loading}>
+							<LinearGradient
+								colors={[colors.gradientStart, colors.gradientEnd]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.addImageButton}
+							>
+								<Entypo name="image" size={24} color="#ffffff" />
+								<Text
+									style={[styles.addImageText, { color: "#ffffff"}]}
+								>
+									Add Photo
+								</Text>
+							</LinearGradient>
 						</TouchableOpacity>
 					)}
 
@@ -177,7 +194,6 @@ export default function CreatePostScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
 	},
 	keyboardView: {
 		flex: 1,
@@ -189,16 +205,13 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 15,
 		paddingVertical: 12,
 		borderBottomWidth: 1,
-		borderBottomColor: "#dbdbdb",
 	},
 	cancelText: {
 		fontSize: 16,
-		color: "#262626",
 	},
 	headerTitle: {
 		fontSize: 16,
 		fontWeight: "600",
-		color: "#262626",
 	},
 	postText: {
 		fontSize: 16,
@@ -214,7 +227,6 @@ const styles = StyleSheet.create({
 	},
 	input: {
 		fontSize: 16,
-		color: "#262626",
 		minHeight: 100,
 		textAlignVertical: "top",
 	},
@@ -247,18 +259,18 @@ const styles = StyleSheet.create({
 	addImageButton: {
 		marginTop: 20,
 		padding: 15,
-		backgroundColor: "#f0f0f0",
 		borderRadius: 8,
 		alignItems: "center",
+		flexDirection: "row",
+		justifyContent: "center",
+		gap: 4
 	},
 	addImageText: {
 		fontSize: 16,
-		color: "#262626",
 	},
 	charCount: {
 		marginTop: 20,
 		textAlign: "right",
 		fontSize: 12,
-		color: "#8e8e8e",
 	},
 });
