@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { use, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -17,7 +17,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Logo from "../../components/Logo";
 import { showToast } from "../../utils/toast";
-
+import { handleInputNext } from "../../utils/inputHelpers";
 type SignUpScreenNavigationProp = StackNavigationProp<
 	AuthStackParamList,
 	"SignUp"
@@ -33,6 +33,11 @@ export default function SignUpScreen({ navigation }: Props) {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [fullName, setFullName] = useState("");
 	const [username, setUsername] = useState("");
+	const usernameRef = useRef<TextInput>(null);
+	const emailRef = useRef<TextInput>(null);
+	const passwordRef = useRef<TextInput>(null);
+	const confirmPasswordRef = useRef<TextInput>(null);
+
 	const { signUp, loading } = useAuth();
 	const { colors } = useTheme();
 	const handleSignUp = async () => {
@@ -48,7 +53,9 @@ export default function SignUpScreen({ navigation }: Props) {
 		}
 
 		if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-			showToast.info("Username can only contain letters, numbers, and underscores");
+			showToast.info(
+				"Username can only contain letters, numbers, and underscores"
+			);
 			return;
 		}
 		if (password !== confirmPassword) {
@@ -63,16 +70,20 @@ export default function SignUpScreen({ navigation }: Props) {
 
 		await signUp(email, password, username, fullName);
 	};
-
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
 			style={[styles.container, { backgroundColor: colors.background }]}
 		>
-			<ScrollView contentContainerStyle={styles.scrollContent}>
-				<View style={styles.content}>
-					<Logo/>
-					<Text style={[styles.subtitle, {color:colors.textSecondary}]}>Create your account</Text>
+			<ScrollView
+				contentContainerStyle={styles.scrollContent}
+				keyboardShouldPersistTaps="handled"
+			>
+				<View style={[styles.content, { backgroundColor: colors.background }]}>
+					<Logo />
+					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+						Create your account
+					</Text>
 
 					<TextInput
 						style={[
@@ -87,6 +98,10 @@ export default function SignUpScreen({ navigation }: Props) {
 						placeholderTextColor={colors.textTertiary}
 						value={fullName}
 						onChangeText={setFullName}
+						returnKeyType="next"
+						onSubmitEditing={() => {
+							handleInputNext(usernameRef)
+						}}
 					/>
 					<TextInput
 						style={[
@@ -97,11 +112,15 @@ export default function SignUpScreen({ navigation }: Props) {
 								color: colors.textPrimary,
 							},
 						]}
+						ref={usernameRef}
 						placeholder="Username"
 						placeholderTextColor={colors.textTertiary}
 						value={username}
 						onChangeText={(text) => setUsername(text.toLowerCase())}
 						autoCapitalize="none"
+						returnKeyType="next"
+						onSubmitEditing={() =>handleInputNext(emailRef)
+						}
 					/>
 
 					<TextInput
@@ -113,12 +132,15 @@ export default function SignUpScreen({ navigation }: Props) {
 								color: colors.textPrimary,
 							},
 						]}
+						ref={emailRef}
 						placeholder="Email"
 						placeholderTextColor={colors.textTertiary}
 						value={email}
 						onChangeText={setEmail}
 						autoCapitalize="none"
 						keyboardType="email-address"
+						returnKeyType="next"
+						onSubmitEditing={() => handleInputNext(passwordRef)}
 					/>
 
 					<TextInput
@@ -130,11 +152,14 @@ export default function SignUpScreen({ navigation }: Props) {
 								color: colors.textPrimary,
 							},
 						]}
+						ref={passwordRef}
 						placeholder="Password"
 						placeholderTextColor={colors.textTertiary}
 						value={password}
 						onChangeText={setPassword}
 						secureTextEntry
+						returnKeyType="next"
+						onSubmitEditing={() => handleInputNext(confirmPasswordRef)}
 					/>
 
 					<TextInput
@@ -151,6 +176,9 @@ export default function SignUpScreen({ navigation }: Props) {
 						value={confirmPassword}
 						onChangeText={setConfirmPassword}
 						secureTextEntry
+						ref={confirmPasswordRef}
+						returnKeyType="done"
+						onSubmitEditing={() => handleSignUp()}
 					/>
 
 					<TouchableOpacity onPress={handleSignUp} disabled={loading}>
@@ -168,10 +196,10 @@ export default function SignUpScreen({ navigation }: Props) {
 						</LinearGradient>
 					</TouchableOpacity>
 					<TouchableOpacity onPress={() => navigation.navigate("Login")}>
-						<Text style={[styles.linkText, {color:colors.textSecondary}]}>
-							Already have an account? 
+						<Text style={[styles.linkText, { color: colors.textSecondary }]}>
+							Already have an account?
 							<Text style={[styles.linkBold, { color: colors.primary }]}>
-								 Log In
+								Log In
 							</Text>
 						</Text>
 					</TouchableOpacity>

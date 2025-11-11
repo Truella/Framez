@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -16,6 +16,7 @@ import { showToast } from "../../utils/toast";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Logo from "../../components/Logo";
+import { handleInputNext } from "../../utils/inputHelpers";
 
 type LoginScreenNavigationProp = StackNavigationProp<
 	AuthStackParamList,
@@ -31,6 +32,7 @@ export default function LoginScreen({ navigation }: Props) {
 	const [password, setPassword] = useState("");
 	const { signIn, loading } = useAuth();
 	const { colors } = useTheme();
+	const passwordRef = useRef<TextInput>(null);
 	const handleLogin = async () => {
 		if (!email || !password) {
 			showToast.info("Please fill in all fields");
@@ -62,6 +64,8 @@ export default function LoginScreen({ navigation }: Props) {
 					onChangeText={setEmail}
 					autoCapitalize="none"
 					keyboardType="email-address"
+					returnKeyType="next"
+					onSubmitEditing={()=>handleInputNext(passwordRef)}
 				/>
 				<TextInput
 					style={[
@@ -77,6 +81,9 @@ export default function LoginScreen({ navigation }: Props) {
 					value={password}
 					onChangeText={setPassword}
 					secureTextEntry
+					ref={passwordRef}
+					returnKeyType="done"
+					onSubmitEditing={handleLogin}
 				/>
 				<TouchableOpacity onPress={handleLogin} disabled={loading}>
 					<LinearGradient
