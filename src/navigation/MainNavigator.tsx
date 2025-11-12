@@ -1,16 +1,20 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MainTabsParamList } from '../types/navigation';
-import FeedScreen from '../screens/Feed/FeedScreen';
-import CreatePostScreen from '../screens/Post/CreatePostScreen';
-import ProfileScreen from '../screens/Profile/ProfileScreen';
-import { MaterialIcons } from '@expo/vector-icons';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { useTheme } from '../context/ThemeContext';
+import FeedScreen from "../screens/Feed/FeedScreen";
+import CreatePostScreen from "../screens/Post/CreatePostScreen";
+import ProfileScreen from "../screens/Profile/ProfileScreen";
+import { useTheme } from "../context/ThemeContext";
+import { MainTabsParamList } from "../types/navigation";
+
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
 export default function MainNavigator() {
-	const {colors} = useTheme()
+	const { colors } = useTheme();
+	const insets = useSafeAreaInsets();
+
 	return (
 		<Tab.Navigator
 			screenOptions={{
@@ -21,10 +25,10 @@ export default function MainNavigator() {
 				tabBarStyle: {
 					borderTopWidth: 1,
 					borderTopColor: colors.border,
-					paddingBottom: 5,
+					paddingBottom: insets.bottom + 5, 
 					paddingTop: 5,
-					height: 80,
-					backgroundColor: colors.background
+					height: 70 + insets.bottom, 
+					backgroundColor: colors.background,
 				},
 			}}
 		>
