@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { usePosts } from "../context/PostsContext";
 import { likesService, savedPostsService } from "../services/likes";
 import { useTheme } from "../context/ThemeContext";
+import { showToast } from "../utils/toast";
 
 interface PostCardProps {
 	post: Post;
@@ -59,12 +60,14 @@ function PostCard({ post, onDelete, showDeleteButton = false }: PostCardProps) {
 		} catch (err) {
 			console.error("Error toggling like:", err);
 			// revert
-			updatePostLike(post.id, (post.is_liked ?? false), (post.like_count ?? 0));
+			updatePostLike(post.id, post.is_liked ?? false, post.like_count ?? 0);
 		} finally {
 			setLoading(false);
 		}
 	};
-
+	const handleShowToast = () => {
+		showToast.info("Feature coming soon!");
+	};
 	const handleSave = async () => {
 		if (!user?.id || loading) return;
 
@@ -79,7 +82,7 @@ function PostCard({ post, onDelete, showDeleteButton = false }: PostCardProps) {
 			}
 		} catch (err) {
 			console.error("Error toggling save:", err);
-			updatePostSave(post.id, (post.is_saved ?? false), post);
+			updatePostSave(post.id, post.is_saved ?? false, post);
 		} finally {
 			setLoading(false);
 		}
@@ -145,15 +148,11 @@ function PostCard({ post, onDelete, showDeleteButton = false }: PostCardProps) {
 					</Text>
 				)}
 
-				<TouchableOpacity>
-					<Ionicons
-						name="chatbubble-outline"
-						size={26}
-						color={colors.comment}
-					/>
+				<TouchableOpacity onPress={handleShowToast}>
+					<Ionicons name="chatbubble-outline" size={26} color={"#e1e1e1"} />
 				</TouchableOpacity>
-				<TouchableOpacity>
-					<Ionicons name="paper-plane-outline" size={26} color={colors.share} />
+				<TouchableOpacity onPress={handleShowToast}>
+					<Ionicons name="paper-plane-outline" size={26} color={"#e1e1e1"} />
 				</TouchableOpacity>
 			</View>
 
@@ -179,7 +178,10 @@ function PostCard({ post, onDelete, showDeleteButton = false }: PostCardProps) {
 		>
 			{renderHeader()}
 			{post.image_url ? (
-				<Image source={{ uri: post.image_url }} style={styles.postImage} />
+				<View>
+					<Image source={{ uri: post.image_url }} style={styles.postImage} />
+					<Text style={styles.content}>{post.content}</Text>
+				</View>
 			) : (
 				<LinearGradient
 					colors={[colors.surface, "rgba(102, 126, 234, 0.1)"]}

@@ -13,16 +13,17 @@ export default {
 			resizeMode: "contain",
 			backgroundColor: "#f4f5f7",
 		},
-		ios: {
-			supportsTablet: true,
-		},
 		android: {
+			package: "com.truella.framez",
 			adaptiveIcon: {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
 			edgeToEdgeEnabled: true,
 			predictiveBackGestureEnabled: false,
+		},
+		ios: {
+			supportsTablet: true,
 		},
 		web: {
 			favicon: "./assets/favicon.png",
