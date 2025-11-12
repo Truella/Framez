@@ -20,6 +20,7 @@ import Entypo from "@expo/vector-icons/Entypo";
 import { showToast } from "../../utils/toast";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { usePosts } from "../../context/PostsContext";
 
 export default function CreatePostScreen() {
 	const [content, setContent] = useState("");
@@ -28,6 +29,7 @@ export default function CreatePostScreen() {
 	const { user } = useAuth();
 	const navigation = useNavigation();
 	const { colors } = useTheme();
+	const {addPost}= usePosts()
 	const pickImage = async () => {
 		try {
 			// Request permission
@@ -84,6 +86,8 @@ export default function CreatePostScreen() {
 			);
 
 			if (post) {
+				addPost(post);
+
 				showToast.success("Success", "Post created successfully!");
 				setContent("");
 				setImageUri(null);

@@ -1,110 +1,166 @@
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, {
+	createContext,
+	useState,
+	useContext,
+	useCallback,
+	useMemo,
+	useEffect,
+	useRef, // Used for stable caching check
+} from "react";
 import { Post } from "../types";
 import { postService } from "../services/posts";
 import { savedPostsService } from "../services/likes";
+import { useAuth } from "./AuthContext";
+// Assuming showToast is available from utils/toast
 
 interface PostsContextType {
 	allPosts: Post[];
 	userPosts: Post[];
 	savedPosts: Post[];
 	loading: boolean;
-	loadAllPosts: () => Promise<void>;
-	loadUserPosts: (userId: string) => Promise<void>;
+	lastFetchedAt: number | null;
+	loadAllPosts: (userId?: string, force?: boolean) => Promise<void>;
+	loadUserPosts: (userId: string, currentUserId?: string) => Promise<void>;
 	loadSavedPosts: (userId: string) => Promise<void>;
+	addPost: (post: Post) => void;
 	updatePostLike: (postId: string, liked: boolean, count: number) => void;
-	updatePostSave: (postId: string, saved: boolean) => void;
+	updatePostSave: (postId: string, saved: boolean, post?: Post) => void;
 	removePost: (postId: string) => void;
 }
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
 export function PostsProvider({ children }: { children: React.ReactNode }) {
+	const { user, loading: authLoading } = useAuth();
 	const [allPosts, setAllPosts] = useState<Post[]>([]);
 	const [userPosts, setUserPosts] = useState<Post[]>([]);
 	const [savedPosts, setSavedPosts] = useState<Post[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
 
-	const loadAllPosts = useCallback(async () => {
-		try {
-			setLoading(true);
-			const posts = await postService.fetchPosts();
-			setAllPosts(posts);
-		} catch (error) {
-			console.error("Error loading posts:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+	// Ref to hold the mutable lastFetchedAt value for stable caching checks
+	const lastFetchedAtRef = useRef<number | null>(null);
 
-	const loadUserPosts = useCallback(async (userId: string) => {
-		try {
+	// Sync the state value into the ref whenever it changes
+	useEffect(() => {
+		lastFetchedAtRef.current = lastFetchedAt;
+	}, [lastFetchedAt]);
+
+	// --- Core Fetching Functions ---
+
+	const loadAllPosts = useCallback(
+		async (currentUserId?: string, force = false) => {
+			// Caching logic
+			const MIN_TIME_BETWEEN_FETCHES = 1000 * 60; // 1 minute
+			const currentLastFetchedAt = lastFetchedAtRef.current;
+
+			if (
+				!force &&
+				currentLastFetchedAt &&
+				Date.now() - currentLastFetchedAt < MIN_TIME_BETWEEN_FETCHES
+			) {
+				return;
+			}
+
+
 			setLoading(true);
-			const posts = await postService.fetchUserPosts(userId);
-			setUserPosts(posts);
-		} catch (error) {
-			console.error("Error loading user posts:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+
+			try {
+				const posts = await postService.fetchPosts(currentUserId);
+				setAllPosts(posts);
+				setLastFetchedAt(Date.now());
+			} catch (error) {
+				console.error("Error loading all posts:", error);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[]
+	);
+
+	const loadUserPosts = useCallback(
+		async (userId: string, currentUserId?: string) => {
+			setLoading(true);
+			try {
+				const posts = await postService.fetchUserPosts(userId, currentUserId);
+				setUserPosts(posts);
+			} catch (error) {
+				console.error("Error loading user posts:", error);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[]
+	);
 
 	const loadSavedPosts = useCallback(async (userId: string) => {
+		setLoading(true);
 		try {
 			const posts = await savedPostsService.getUserSavedPosts(userId);
 			setSavedPosts(posts);
 		} catch (error) {
 			console.error("Error loading saved posts:", error);
+			setSavedPosts([]); // Set empty on error
+		} finally {
+			setLoading(false);
 		}
+	}, []);
+	useEffect(() => {
+		if (!authLoading) {
+			
+
+			// Clear stale data and show loading
+			setAllPosts([]);
+			setUserPosts([]);
+			setSavedPosts([]);
+			setLastFetchedAt(null);
+			setLoading(true);
+
+			// Fetch new data
+			loadAllPosts(user?.id, true).finally(() => {
+				setLoading(false); 
+			});
+		}
+	}, [authLoading, user?.id, loadAllPosts]);
+	
+	const addPost = useCallback((post: Post) => {
+		setAllPosts((prev) => [post, ...prev]);
+		setUserPosts((prev) => [post, ...prev]);
 	}, []);
 
 	const updatePostLike = useCallback(
 		(postId: string, liked: boolean, count: number) => {
-			// Update in all posts
-			setAllPosts((prev) =>
-				prev.map((post) =>
-					post.id === postId
-						? { ...post, is_liked: liked, like_count: count }
-						: post
-				)
-			);
-			// Update in user posts
-			setUserPosts((prev) =>
-				prev.map((post) =>
-					post.id === postId
-						? { ...post, is_liked: liked, like_count: count }
-						: post
-				)
-			);
-			// Update in saved posts
-			setSavedPosts((prev) =>
-				prev.map((post) =>
-					post.id === postId
-						? { ...post, is_liked: liked, like_count: count }
-						: post
-				)
-			);
+			const updateFn = (p: Post) =>
+				p.id === postId ? { ...p, is_liked: liked, like_count: count } : p;
+
+			setAllPosts((prev) => prev.map(updateFn));
+			setUserPosts((prev) => prev.map(updateFn));
+			setSavedPosts((prev) => prev.map(updateFn));
 		},
 		[]
 	);
 
-	const updatePostSave = useCallback((postId: string, saved: boolean) => {
-		// Update save status in all posts
-		setAllPosts((prev) =>
-			prev.map((post) =>
-				post.id === postId ? { ...post, is_saved: saved } : post
-			)
-		);
-		setUserPosts((prev) =>
-			prev.map((post) =>
-				post.id === postId ? { ...post, is_saved: saved } : post
-			)
-		);
+	const updatePostSave = useCallback(
+		(postId: string, saved: boolean, post?: Post) => {
+			const updateFn = (p: Post) =>
+				p.id === postId ? { ...p, is_saved: saved } : p;
 
-		// Remove from saved posts if unsaved
-		if (!saved) {
-			setSavedPosts((prev) => prev.filter((post) => post.id !== postId));
-		}
-	}, []);
+			setAllPosts((prev) => prev.map(updateFn));
+			setUserPosts((prev) => prev.map(updateFn));
+
+			if (saved && post) {
+				setSavedPosts((prev) => {
+					// Prevent duplicates
+					if (prev.some((p) => p.id === postId)) return prev;
+					return [{ ...post, is_saved: true }, ...prev];
+				});
+			} else if (!saved) {
+				// Remove from saved posts when unsaving
+				setSavedPosts((prev) => prev.filter((p) => p.id !== postId));
+			}
+		},
+		[]
+	);
 
 	const removePost = useCallback((postId: string) => {
 		setAllPosts((prev) => prev.filter((post) => post.id !== postId));
@@ -112,30 +168,46 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
 		setSavedPosts((prev) => prev.filter((post) => post.id !== postId));
 	}, []);
 
+	const value = useMemo(
+		() => ({
+			allPosts,
+			userPosts,
+			savedPosts,
+			loading,
+			lastFetchedAt,
+			loadAllPosts,
+			loadUserPosts,
+			loadSavedPosts,
+			addPost,
+			updatePostLike,
+			updatePostSave,
+			removePost,
+		}),
+		[
+			allPosts,
+			userPosts,
+			savedPosts,
+			loading,
+			lastFetchedAt,
+			loadAllPosts,
+			loadUserPosts,
+			loadSavedPosts,
+			addPost,
+			updatePostLike,
+			updatePostSave,
+			removePost,
+		]
+	);
+
 	return (
-		<PostsContext.Provider
-			value={{
-				allPosts,
-				userPosts,
-				savedPosts,
-				loading,
-				loadAllPosts,
-				loadUserPosts,
-				loadSavedPosts,
-				updatePostLike,
-				updatePostSave,
-				removePost,
-			}}
-		>
-			{children}
-		</PostsContext.Provider>
+		<PostsContext.Provider value={value}>{children}</PostsContext.Provider>
 	);
 }
 
-export function usePosts() {
+export const usePosts = () => {
 	const context = useContext(PostsContext);
 	if (!context) {
-		throw new Error("usePosts must be used within PostsProvider");
+		throw new Error("usePosts must be used within a PostsProvider");
 	}
 	return context;
-}
+};

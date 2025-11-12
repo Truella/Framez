@@ -4,13 +4,13 @@ import { useTheme } from "../context/ThemeContext";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
 export default function ThemeSwitcher() {
-	const { setTheme, isDark } = useTheme();
+	const { setTheme, isDark ,colors} = useTheme();
 	return (
 		<TouchableOpacity onPress={() => setTheme(isDark ? "light" : "dark")}>
 			{isDark ? (
-				<AntDesign name="sun" size={24} color="white" />
+				<AntDesign name="sun" size={24} color={colors.primary} />
 			) : (
-				<AntDesign name="moon" size={24} color="black" />
+				<AntDesign name="moon" size={24} color={colors.primary} />
 			)}
 		</TouchableOpacity>
 	);

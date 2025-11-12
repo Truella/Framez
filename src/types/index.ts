@@ -19,6 +19,7 @@ export interface Post {
 	likes?: Like[];
 	like_count?: number;
 	is_liked?: boolean;
+	is_saved?: boolean;
 }
 export interface Like {
 	id: string;
@@ -29,6 +30,7 @@ export interface Like {
 export interface AuthContextType {
 	user: User | null;
 	loading: boolean;
+	userId?: string;
 	signUp: (
 		email: string,
 		password: string,

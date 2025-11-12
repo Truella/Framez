@@ -9,9 +9,9 @@ export default {
 		userInterfaceStyle: "light",
 		newArchEnabled: true,
 		splash: {
-			image: "./assets/splash-icon.png",
+			image: "./assets/Framez-Splash.png",
 			resizeMode: "contain",
-			backgroundColor: "#ffffff",
+			backgroundColor: "#f4f5f7",
 		},
 		ios: {
 			supportsTablet: true,
@@ -32,7 +32,7 @@ export default {
 			supabaseUrl: process.env.SUPABASE_URL,
 			supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
 			eas: {
-				projectId: process.env.EAS_PROJECT_ID, 
+				projectId: "27e02d9e-bd3a-47fd-890b-af8231ebdb9c",
 			},
 		},
 	},

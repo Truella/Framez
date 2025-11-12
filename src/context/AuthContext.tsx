@@ -52,14 +52,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 			setUser(data);
 		} catch (error: any) {
-			console.error("Error fetching profile:", error.message);
 			showToast.error("Error", "Failed to load profile.");
 			await supabase.auth.signOut();
 		} finally {
 			setLoading(false);
 		}
 	};
-
 	const signUp = async (
 		email: string,
 		password: string,
@@ -68,56 +66,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	) => {
 		try {
 			setLoading(true);
-
-			// Check if username is already taken
-			const { data: existingUsername } = await supabase
-				.from("profiles")
-				.select("username")
-				.eq("username", username.toLowerCase())
-				.maybeSingle();
-
-			if (existingUsername) {
-				showToast.error("Error", "Username is already taken");
-				return;
-			}
-
-			// Sign up the user
 			const { data: authData, error: authError } = await supabase.auth.signUp({
 				email,
 				password,
+				options: {
+					data: {
+						username: username.toLowerCase(),
+						full_name: fullName,
+					},
+				},
 			});
 
 			if (authError) throw authError;
 			if (!authData.user) throw new Error("No user returned from signup");
-
-			// Wait for auth to settle
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			// Create profile
-			const { error: profileError } = await supabase.from("profiles").insert({
-				id: authData.user.id,
-				email: email,
-				username: username.toLowerCase(),
-				full_name: fullName,
-			});
-
-			if (profileError) throw profileError;
-
 			showToast.success(
 				"Success",
-				"Account created successfully! A confirmation mail has been sent to your mail."
+				"Account created successfully! Please log in."
 			);
 		} catch (error: any) {
-			console.error("Signup error:", error);
-			showToast.error(
-				"Signup Error",
-				error.message || "Failed to create account"
-			);
+			showToast.error("Signup error:", error);
+
+			// Check for duplicate username/email errors
+			if (
+				error.message?.includes("duplicate") ||
+				error.message?.includes("username") ||
+				error.message?.includes("profiles_username_key")
+			) {
+				showToast.error("Error", "Username or email is already taken");
+			} else {
+				showToast.error(
+					"Signup Error",
+					error.message || "Failed to create account"
+				);
+			}
 		} finally {
 			setLoading(false);
 		}
 	};
-
 	const signIn = async (email: string, password: string) => {
 		try {
 			setLoading(true);
@@ -139,13 +124,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		try {
 			const { error } = await supabase.auth.signOut();
 			if (error) throw error;
+			setUser(null);
 		} catch (error: any) {
 			showToast.error("Error", error.message);
 		}
 	};
 
 	return (
-		<AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+		<AuthContext.Provider
+			value={{ user, userId: user?.id, loading, signUp, signIn, signOut }}
+		>
 			{children}
 		</AuthContext.Provider>
 	);

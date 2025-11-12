@@ -12,11 +12,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 import { postService } from "../../services/posts";
 import PostCard from "../../components/PostCard";
-import { useFocusEffect } from "@react-navigation/native";
+import { useEffect } from "react";
 import { usePosts } from "../../context/PostsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Toast from "react-native-toast-message";
+import { showToast } from "../../utils/toast";
 
 type TabType = "posts" | "saved";
 
@@ -25,40 +27,29 @@ export default function ProfileScreen() {
 	const [activeTab, setActiveTab] = useState<TabType>("posts");
 	const [initialLoading, setInitialLoading] = useState(true);
 	const { colors } = useTheme();
-	const {
-		userPosts,
-		savedPosts,
-		loadUserPosts,
-		loadSavedPosts,
-		updatePostLike,
-		updatePostSave,
-		removePost,
-	} = usePosts();
+	const { userPosts, savedPosts, loadUserPosts, loadSavedPosts, removePost } = usePosts();
 
-	const loadData = async (showSpinner = false) => {
-		if (!user?.id) return;
+	// Load data once on mount
+	useEffect(() => {
+		const loadData = async () => {
+			if (!user?.id) return;
 
-		try {
-			if (showSpinner) setInitialLoading(true);
-			await Promise.all([loadUserPosts(user.id), loadSavedPosts(user.id)]);
-		} catch (error) {
-			console.error("Error loading profile data:", error);
-		} finally {
-			setInitialLoading(false);
-		}
-	};
-
-	useFocusEffect(
-		useCallback(() => {
-			if (user?.id) {
-				// Always reload, but only show spinner if no data
-				const shouldShowSpinner =
-					userPosts.length === 0 && savedPosts.length === 0;
-				loadData(shouldShowSpinner);
+			try {
+				setInitialLoading(true);
+				await Promise.all([
+					loadUserPosts(user.id, user.id),
+					loadSavedPosts(user.id),
+				]);
+			} catch (error) {
+				showToast.error("Error loading profile data");
+			} finally {
+				setInitialLoading(false);
 			}
-		}, [user?.id])
-	);
+		};
 
+		loadData();
+	}, [user?.id]);
+	const handleLogout = () => {};
 	const handleDeletePost = async (postId: string) => {
 		Alert.alert("Delete Post", "Are you sure you want to delete this post?", [
 			{ text: "Cancel", style: "cancel" },
@@ -80,14 +71,6 @@ export default function ProfileScreen() {
 		]);
 	};
 
-	const handleLikeUpdate = (postId: string, liked: boolean, count: number) => {
-		updatePostLike(postId, liked, count);
-	};
-
-	const handleSaveUpdate = (postId: string, saved: boolean) => {
-		updatePostSave(postId, saved);
-	};
-
 	if (initialLoading) {
 		return (
 			<SafeAreaView
@@ -104,6 +87,7 @@ export default function ProfileScreen() {
 			</SafeAreaView>
 		);
 	}
+
 	const renderHeader = () => (
 		<View>
 			<View style={styles.profileInfo}>
@@ -208,17 +192,15 @@ export default function ProfileScreen() {
 						post={item}
 						showDeleteButton={activeTab === "posts"}
 						onDelete={handleDeletePost}
-						onLikeUpdate={handleLikeUpdate}
-						onSaveUpdate={handleSaveUpdate}
 					/>
 				)}
 				ListHeaderComponent={renderHeader}
 				ListEmptyComponent={
 					<View style={styles.emptyContainer}>
-						<Text style={styles.emptyText}>
+						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>
 							{activeTab === "posts" ? "No posts yet" : "No saved posts yet"}
 						</Text>
-						<Text style={styles.emptySubtext}>
+						<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
 							{activeTab === "posts"
 								? "Create your first post to get started!"
 								: "Save posts to see them here"}

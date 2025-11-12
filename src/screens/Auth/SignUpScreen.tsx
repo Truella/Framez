@@ -189,7 +189,7 @@ export default function SignUpScreen({ navigation }: Props) {
 							style={styles.button}
 						>
 							{loading ? (
-								<ActivityIndicator color="#fff" />
+								<ActivityIndicator color={colors.primary} />
 							) : (
 								<Text style={styles.buttonText}>Sign Up</Text>
 							)}

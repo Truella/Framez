@@ -1,25 +1,23 @@
 import { supabase } from "../config/supabase";
 import * as FileSystem from "expo-file-system/legacy";
-
 import * as ImageManipulator from "expo-image-manipulator";
 import { Post } from "../types";
+import { showToast } from "../utils/toast";
 
 export const postService = {
 	// Upload image to Supabase Storage
 	uploadImage: async (uri: string, userId: string): Promise<string | null> => {
 		try {
-			console.log("🔵 Starting image upload...");
-
 			// Compress image first
 			const manipulatedImage = await ImageManipulator.manipulateAsync(
 				uri,
-				[{ resize: { width: 1080 } }], // Max width like Instagram
+				[{ resize: { width: 1080 } }],
 				{ compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
 			);
 
 			// Read file as base64
 			const base64 = await FileSystem.readAsStringAsync(manipulatedImage.uri, {
-				encoding: "base64", // Changed from FileSystem.EncodingType.Base64
+				encoding: "base64",
 			});
 
 			// Create unique filename
@@ -38,7 +36,7 @@ export const postService = {
 				});
 
 			if (error) {
-				console.error("❌ Upload error:", error);
+				showToast.error(`Upload error ${error}`);
 				throw error;
 			}
 
@@ -47,10 +45,8 @@ export const postService = {
 				data: { publicUrl },
 			} = supabase.storage.from("post-images").getPublicUrl(fileName);
 
-			console.log("✅ Image uploaded:", publicUrl);
 			return publicUrl;
 		} catch (error) {
-			console.error("Image upload error:", error);
 			return null;
 		}
 	},
@@ -73,87 +69,139 @@ export const postService = {
 			}
 
 			// Insert post into database
-			const { data, error } = await supabase
+			const { data: insertedPost, error: insertError } = await supabase
 				.from("posts")
 				.insert({
 					user_id: userId,
 					content,
 					image_url: imageUrl,
 				})
+				.select("id")
+				.single();
+
+			if (insertError) throw insertError;
+			const { data, error } = await supabase
+				.from("posts")
 				.select(
 					`
-          *,
-          profiles (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `
+					*,
+					profiles (
+						id,
+						username,
+						full_name,
+						avatar_url
+					),
+					likes!left(user_id),
+					saved_posts!left(user_id)
+				`
 				)
+				.eq("id", insertedPost.id)
 				.single();
 
 			if (error) throw error;
+			const post: Post = {
+				...data,
+				like_count: data.likes?.length || 0,
+				is_liked:
+					data.likes?.some((like: any) => like.user_id === userId) || false,
+				is_saved:
+					data.saved_posts?.some((save: any) => save.user_id === userId) ||
+					false,
+			};
 
-			console.log("✅ Post created:", data);
-			return data as Post;
+			return post;
 		} catch (error) {
-			console.error("Create post error:", error);
+			showToast.error(`Create post error: ${error}`);
 			return null;
 		}
 	},
 
 	// Fetch all posts (feed)
-	fetchPosts: async (): Promise<Post[]> => {
+	fetchPosts: async (userId?: string): Promise<Post[]> => {
 		try {
-			const { data, error } = await supabase
+			let query = supabase
 				.from("posts")
 				.select(
 					`
-          *,
-          profiles (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `
+					*,
+					profiles (
+						id,
+						username,
+						full_name,
+						avatar_url
+					),
+					likes!left(user_id),
+					saved_posts!left(user_id)
+				`
 				)
 				.order("created_at", { ascending: false });
 
+			const { data, error } = await query;
+
 			if (error) throw error;
 
-			return (data as Post[]) || [];
+			// Process the data to add computed fields
+			const posts = (data || []).map((post: any) => {
+				const isLiked = userId
+					? post.likes?.some((like: any) => like.user_id === userId)
+					: false;
+				return {
+					...post,
+					like_count: post.likes?.length || 0,
+					is_liked: isLiked,
+					is_saved: userId
+						? post.saved_posts?.some((save: any) => save.user_id === userId)
+						: false,
+				};
+			});
+			return posts as Post[];
 		} catch (error) {
-			console.error("Fetch posts error:", error);
+			showToast.error(`Fetch posts error: ${error}`);
 			return [];
 		}
 	},
 
 	// Fetch posts by specific user
-	fetchUserPosts: async (userId: string): Promise<Post[]> => {
+	fetchUserPosts: async (
+		userId: string,
+		currentUserId?: string
+	): Promise<Post[]> => {
 		try {
 			const { data, error } = await supabase
 				.from("posts")
 				.select(
 					`
-          *,
-          profiles (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `
+					*,
+					profiles (
+						id,
+						username,
+						full_name,
+						avatar_url
+					),
+					likes!left(user_id),
+					saved_posts!left(user_id)
+				`
 				)
 				.eq("user_id", userId)
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
 
-			return (data as Post[]) || [];
+			const posts = (data || []).map((post: any) => ({
+				...post,
+				like_count: post.likes?.length || 0,
+				is_liked: currentUserId
+					? post.likes?.some((like: any) => like.user_id === currentUserId)
+					: false,
+				is_saved: currentUserId
+					? post.saved_posts?.some(
+							(save: any) => save.user_id === currentUserId
+					  )
+					: false,
+			}));
+
+			return posts as Post[];
 		} catch (error) {
-			console.error("Fetch user posts error:", error);
 			return [];
 		}
 	},
@@ -176,7 +224,6 @@ export const postService = {
 
 			return true;
 		} catch (error) {
-			console.error("Delete post error:", error);
 			return false;
 		}
 	},

@@ -95,17 +95,17 @@ export const likesService = {
 				.from("likes")
 				.select(
 					`
-          post_id,
-          posts (
-            *,
-            profiles (
-              id,
-              username,
-              full_name,
-              avatar_url
-            )
-          )
-        `
+					post_id,
+					posts (
+						*,
+						profiles (
+							id,
+							username,
+							full_name,
+							avatar_url
+						)
+					)
+				`
 				)
 				.eq("user_id", userId)
 				.order("created_at", { ascending: false });
@@ -186,25 +186,38 @@ export const savedPostsService = {
 				.from("saved_posts")
 				.select(
 					`
-          post_id,
-          posts (
-            *,
-            profiles (
-              id,
-              username,
-              full_name,
-              avatar_url
-            )
-          )
-        `
+					post_id,
+					posts (
+						*,
+						profiles (
+							id,
+							username,
+							full_name,
+							avatar_url
+						),
+						likes!left(user_id),
+						saved_posts!left(user_id)
+					)
+				`
 				)
 				.eq("user_id", userId)
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
 
-			// Transform the data structure
-			return data?.map((item: any) => item.posts).filter(Boolean) || [];
+			// Transform and add computed fields (consistent with fetchPosts)
+			const posts = (data || [])
+				.map((item: any) => item.posts)
+				.filter(Boolean)
+				.map((post: any) => ({
+					...post,
+					like_count: post.likes?.length || 0,
+					is_liked:
+						post.likes?.some((like: any) => like.user_id === userId) || false,
+					is_saved: true, // All fetched saved posts are saved by definition
+				}));
+
+			return posts;
 		} catch (error) {
 			console.error("Get user saved posts error:", error);
 			return [];

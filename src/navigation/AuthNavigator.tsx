@@ -4,17 +4,24 @@ import LoginScreen from "../screens/Auth/LoginScreen";
 import SignUpScreen from "../screens/Auth/SignUpScreen";
 import { AuthStackParamList } from "../types/navigation";
 import { useTheme } from "../context/ThemeContext";
+import { View } from "react-native";
 
 const Stack = createStackNavigator<AuthStackParamList>();
 export default function AuthNavigator() {
-	
- const { colors } = useTheme();
+	const { colors } = useTheme();
 	return (
-		<Stack.Navigator screenOptions={{ headerShown: false , cardStyle:{
-			backgroundColor:colors.background
-		}}}>
-			<Stack.Screen name="Login" component={LoginScreen} />
-			<Stack.Screen name="SignUp" component={SignUpScreen} />
-		</Stack.Navigator>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
+			<Stack.Navigator
+				screenOptions={{
+					headerShown: false,
+					cardStyle: {
+						backgroundColor: colors.background,
+					},
+				}}
+			>
+				<Stack.Screen name="Login" component={LoginScreen} />
+				<Stack.Screen name="SignUp" component={SignUpScreen} />
+			</Stack.Navigator>
+		</View>
 	);
 }
