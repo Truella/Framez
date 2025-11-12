@@ -27,7 +27,8 @@ export default function ProfileScreen() {
 	const [activeTab, setActiveTab] = useState<TabType>("posts");
 	const [initialLoading, setInitialLoading] = useState(true);
 	const { colors } = useTheme();
-	const { userPosts, savedPosts, loadUserPosts, loadSavedPosts, removePost } = usePosts();
+	const { userPosts, savedPosts, loadUserPosts, loadSavedPosts, removePost } =
+		usePosts();
 
 	// Load data once on mount
 	useEffect(() => {
@@ -49,7 +50,6 @@ export default function ProfileScreen() {
 
 		loadData();
 	}, [user?.id]);
-	const handleLogout = () => {};
 	const handleDeletePost = async (postId: string) => {
 		Alert.alert("Delete Post", "Are you sure you want to delete this post?", [
 			{ text: "Cancel", style: "cancel" },
@@ -77,8 +77,8 @@ export default function ProfileScreen() {
 				style={[styles.container, { backgroundColor: colors.background }]}
 			>
 				<View style={[styles.header, { borderColor: colors.border }]}>
-					<Text style={[styles.title, { color: colors.textPrimary }]}>
-						{user?.username}
+					<Text style={[styles.title, { color: colors.primary }]}>
+						@{user?.username}
 					</Text>
 				</View>
 				<View style={styles.centerContainer}>
@@ -103,16 +103,11 @@ export default function ProfileScreen() {
 				</LinearGradient>
 
 				<Text style={[styles.username, { color: colors.textPrimary }]}>
-					@{user?.username}
-				</Text>
-				<Text style={[styles.name, { color: colors.textSecondary }]}>
 					{user?.full_name || "User"}
 				</Text>
-				{user?.bio && (
-					<Text style={[styles.bio, { color: colors.textPrimary }]}>
-						{user?.bio}
-					</Text>
-				)}
+				<Text style={[styles.name, { color: colors.textSecondary }]}>
+					{user?.email}
+				</Text>
 			</View>
 
 			<View style={[styles.stats, { borderColor: colors.border }]}>
@@ -174,7 +169,7 @@ export default function ProfileScreen() {
 		>
 			<View style={[styles.header, { borderColor: colors.border }]}>
 				<Text style={[styles.title, { color: colors.primary }]}>
-					{user?.username}
+					@{user?.username}
 				</Text>
 				<TouchableOpacity
 					onPress={signOut}

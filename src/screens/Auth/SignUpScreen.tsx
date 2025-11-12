@@ -38,7 +38,7 @@ export default function SignUpScreen({ navigation }: Props) {
 	const passwordRef = useRef<TextInput>(null);
 	const confirmPasswordRef = useRef<TextInput>(null);
 
-	const { signUp, loading } = useAuth();
+	const { signUp, isAuthenticating } = useAuth();
 	const { colors } = useTheme();
 	const handleSignUp = async () => {
 		//Form Validation
@@ -181,14 +181,14 @@ export default function SignUpScreen({ navigation }: Props) {
 						onSubmitEditing={() => handleSignUp()}
 					/>
 
-					<TouchableOpacity onPress={handleSignUp} disabled={loading}>
+					<TouchableOpacity onPress={handleSignUp} disabled={isAuthenticating}>
 						<LinearGradient
 							colors={[colors.gradientStart, colors.gradientEnd]}
 							start={{ x: 0, y: 0 }}
 							end={{ x: 1, y: 1 }}
 							style={styles.button}
 						>
-							{loading ? (
+							{isAuthenticating ? (
 								<ActivityIndicator color={colors.primary} />
 							) : (
 								<Text style={styles.buttonText}>Sign Up</Text>

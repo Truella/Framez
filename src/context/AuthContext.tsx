@@ -8,6 +8,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [isAuthenticating, setIsAuthenticating] = useState(false);
 
 	useEffect(() => {
 		// Check active session
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		fullName: string
 	) => {
 		try {
-			setLoading(true);
+			setIsAuthenticating(true);
 			const { data: authData, error: authError } = await supabase.auth.signUp({
 				email,
 				password,
@@ -79,10 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 			if (authError) throw authError;
 			if (!authData.user) throw new Error("No user returned from signup");
-			showToast.success(
-				"Success",
-				"Account created successfully! Please log in."
-			);
+			showToast.success("Success", "Account created successfully!");
 		} catch (error: any) {
 			showToast.error("Signup error:", error);
 
@@ -100,13 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				);
 			}
 		} finally {
-			setLoading(false);
+			setIsAuthenticating(false);
 		}
 	};
 	const signIn = async (email: string, password: string) => {
 		try {
-			setLoading(true);
-
+			setIsAuthenticating(true);
 			const { error } = await supabase.auth.signInWithPassword({
 				email,
 				password,
@@ -116,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		} catch (error: any) {
 			showToast.error("Login Error", error.message);
 		} finally {
-			setLoading(false);
+			setIsAuthenticating(false);
 		}
 	};
 
@@ -132,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<AuthContext.Provider
-			value={{ user, userId: user?.id, loading, signUp, signIn, signOut }}
+			value={{ user, userId: user?.id, loading, signUp, signIn, signOut , isAuthenticating}}
 		>
 			{children}
 		</AuthContext.Provider>

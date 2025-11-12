@@ -30,7 +30,7 @@ interface Props {
 export default function LoginScreen({ navigation }: Props) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const { signIn, loading } = useAuth();
+	const { signIn, isAuthenticating } = useAuth();
 	const { colors } = useTheme();
 	const passwordRef = useRef<TextInput>(null);
 	const handleLogin = async () => {
@@ -85,14 +85,14 @@ export default function LoginScreen({ navigation }: Props) {
 					returnKeyType="done"
 					onSubmitEditing={handleLogin}
 				/>
-				<TouchableOpacity onPress={handleLogin} disabled={loading}>
+				<TouchableOpacity onPress={handleLogin} disabled={isAuthenticating}>
 					<LinearGradient
 						colors={[colors.gradientStart, colors.gradientEnd]}
 						start={{ x: 0, y: 0 }}
 						end={{ x: 1, y: 1 }}
 						style={styles.button}
 					>
-						{loading ? (
+						{isAuthenticating ? (
 							<ActivityIndicator color="#fff" />
 						) : (
 							<Text style={styles.buttonText}>Log In</Text>

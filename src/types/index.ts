@@ -30,6 +30,7 @@ export interface Like {
 export interface AuthContextType {
 	user: User | null;
 	loading: boolean;
+	isAuthenticating: boolean;
 	userId?: string;
 	signUp: (
 		email: string,
